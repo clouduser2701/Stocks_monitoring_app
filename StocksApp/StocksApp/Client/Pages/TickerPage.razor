@@ -1,0 +1,323 @@
+﻿@page "/ticker/{TickerSymbol}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IApiHttpService httpService
+@using Syncfusion.Blazor.Charts
+
+@if (CurrentTicker == null)
+{
+    <p>loading...</p>
+}
+else
+{
+    if (_cannotFindTicker)
+    {
+        <h3 color="red">Ups... The ticker was not found for some reason :(</h3>
+    }
+    else
+    {
+
+        <div class="page_container">
+            <div class="serach_container">
+                <SearchWindow TickerSymbol="@TickerSymbol" />
+            </div>
+            <div class="other_parts_container">
+                <div class="table_container">
+                    <table>
+                        <tr>
+                            <td rowspan="3">
+                                <img src="@CurrentTicker.LogoLink" alt="logo" />
+                            </td>
+
+                            <td colspan="3" class="td_with_name">
+                                @($"{CurrentTicker.Name} ({CurrentTicker.Symbol})")
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Country: @(CurrentTicker.Country.ToUpper())
+                            </td>
+
+                            <td>
+                                Industry: @CurrentTicker.Industry
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                CEO: @CurrentTicker.CEO
+                            </td>
+
+                            <td>
+                                Tags: @CurrentTicker.Tags
+                            </td>
+                        </tr>
+                    </table>
+                    <SfButton CssClass="add_ticker_btn" Content="+" OnClick="@(()=>AddToWatchList())" />
+                </div>
+
+
+                <div class="buttons">
+                    <SfButton CssClass="data_button" Content="last known day" OnClick="@(()=>LocalStocksInfosList=StocksInfosListCurrentDay)"></SfButton>
+                    <SfButton CssClass="data_button" Content="1 week ago" OnClick="@(()=>LocalStocksInfosList=StocksInfosList7Days)"></SfButton>
+                    <SfButton CssClass="data_button" Content="1 month ago" OnClick="@(()=>LocalStocksInfosList=StocksInfosList30Days)"></SfButton>
+                    <SfButton CssClass="data_button" Content="3 month ago" OnClick="@(()=>LocalStocksInfosList=StocksInfosList90Days)"></SfButton>
+                </div>
+
+                <div class="graph_container">
+                    @if (LocalStocksInfosList == null)
+                    {
+                        <p>loading...</p>
+                    }
+                    else
+                    {
+                        if (_cannotFindStocksInfos)
+                        {
+                            <p>the data about the stocks info cannot be fetched at the moment</p>
+                        }
+                        else
+                        {
+                            <SfChart Width="1200" Height="400">
+                                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" />
+
+                                <ChartSeriesCollection>
+                                    <ChartSeries DataSource="@LocalStocksInfosList" XName="DateString" High="H" BearFillColor="#2292D9" BullFillColor="#2292D9" Low="L" Open="O" Close="C" Type="ChartSeriesType.HiloOpenClose">
+                                    </ChartSeries>
+                                </ChartSeriesCollection>
+                            </SfChart>
+                        }
+                    }
+                </div>
+
+                <div class="end_session_info_container">
+                    @if (LasDayEndSession == null)
+                    {
+                        <p>loading...</p>
+                    }
+                    else
+                    {
+                        @if (_cannotFindSession)
+                        {
+                            <p>
+                                sorry, the last session data cannot be found now, page reloading may help
+                            </p>
+                        }
+                        else
+                        {
+                            <table class="session_table">
+                                <tr>
+                                    <td class="session_td">
+                                        From: @LasDayEndSession.From;
+                                    </td>
+
+                                    <td class="session_td">
+                                        Close: @LasDayEndSession.Close
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="session_td">
+                                        Symbol: @LasDayEndSession.Symbol
+                                    </td>
+
+                                    <td class="session_td">
+                                        Volume: @LasDayEndSession.Volume
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="session_td">
+                                        Open: @LasDayEndSession.Open
+                                    </td>
+
+                                    <td class="session_td">
+                                        After Hours: @LasDayEndSession.AfterHours
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="session_td">
+                                        High: @LasDayEndSession.High
+                                    </td>
+
+                                    <td class="session_td">
+                                        Pre Market: @LasDayEndSession.PreMarket
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="session_td">
+                                        Low: @LasDayEndSession.Low
+                                    </td>
+
+                                    <td class="session_td">
+                                    </td>
+                                </tr>
+                            </table>
+                        }
+                    }
+
+                </div>
+
+                <div class="articles_container">
+                    @if (LastArticles == null)
+                    {
+                        <p>loading...</p>
+                    }
+                    else
+                    {
+                        if (_cannotFindArticles)
+                        {
+                            <p>data about the last articles cannot be fetched at the moment</p>
+                        }
+                        <p class="article_head_text">Last 5 Articles</p>
+                        <table class="article_table">
+                            @foreach (ArticleResponseDto article in LastArticles)
+                            {
+                                <tr>
+                                    <td class="article_element">
+                                        @article.Publisher<br>@article.Title
+                                    </td>
+                                    <td class="article_element">
+                                        @article.DatePublished;
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+    }
+
+
+
+
+
+
+}
+
+
+@code {
+    [Parameter] public string TickerSymbol { get; set; }
+
+
+    public TickerResponseDto CurrentTicker { get; set; }
+
+    public EndSession LasDayEndSession { get; set; }
+
+    public List<ArticleResponseDto> LastArticles { get; set; }
+
+    public List<StocksInfo> LocalStocksInfosList { get; set; }
+
+    public List<StocksInfo> StocksInfosList7Days { get; set; }
+    public List<StocksInfo> StocksInfosList30Days { get; set; }
+    public List<StocksInfo> StocksInfosList90Days { get; set; }
+    public List<StocksInfo> StocksInfosListCurrentDay { get; set; }
+
+    private bool _cannotFindTicker;
+    private bool _cannotFindSession;
+    private bool _cannotFindArticles;
+    private bool _cannotFindStocksInfos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TickerSymbol == null || TickerSymbol == "")
+        {
+            _cannotFindTicker = true;
+            return;
+        }
+
+
+        try
+        {
+
+            CurrentTicker = await httpService.GetTickerResponseBySymbol(TickerSymbol);
+
+        }
+        catch
+        {
+            _cannotFindTicker = true;
+        }
+
+        if (CurrentTicker == null || CurrentTicker.Symbol != TickerSymbol)
+        {
+            _cannotFindTicker = true;
+        }
+        else
+        {
+            try
+            {
+
+                LasDayEndSession = await httpService.GetEndsessionForTicker(TickerSymbol);
+
+            }
+            catch
+            {
+                _cannotFindSession = true;
+            }
+
+            try
+            {
+
+                LastArticles = await httpService.GetLastArticlesForTicker(TickerSymbol);
+            }
+            catch
+            {
+                _cannotFindArticles = true;
+            }
+            try
+            {
+
+
+                StocksInfosList90Days = await httpService.GetLastStocksInfoForTicker(TickerSymbol);
+
+                StocksInfosList30Days = GetLastDays(StocksInfosList90Days, 30);
+
+                StocksInfosList7Days = GetLastDays(StocksInfosList90Days, 7);
+
+                LocalStocksInfosList = StocksInfosList7Days;
+                StocksInfosListCurrentDay = GetLastDays(StocksInfosList90Days, 1);
+
+
+
+            }
+            catch
+            {
+                _cannotFindStocksInfos = true;
+            }
+        }
+
+    }
+
+    public List<StocksInfo> GetLastDays(List<StocksInfo> listOfInfos, int lastDaysNumber)
+    {
+        return listOfInfos.Skip(Math.Max(0, listOfInfos.Count() - lastDaysNumber)).ToList();
+    }
+
+    public async Task AddToWatchList()
+    {
+        await httpService.AddTickerToWatchList(TickerSymbol);
+    }
+}
+
+
+<style>
+    .add_ticker_btn {
+        height: 70px;
+        width: 70px;
+        border-radius: 50%;
+        border: 1px solid #2292D9;
+        position: relative;
+        top: -230px;
+        right: -1000px;
+        font-size: 38px;
+        color: white;
+        background-color: #2292C9;
+    }
+
+    .data_button {
+        border-radius: 1%;
+        background-color: #2292D9;
+        color: white;
+        width: 120px;
+        height: 39px;
+        margin: 20px;
+    }
+</style>

@@ -1,0 +1,95 @@
+﻿
+
+.form_field {
+    width: 600px;
+}
+
+.main_container {
+    background-color: white;
+    color: #2292D9;
+    width: 800px;
+    height: 300px;
+    position: absolute;
+    z-index: 15;
+    top: 50%;
+    left: 50%;
+    margin: 100px 0 0 -400px;
+    font-weight: bold;
+}
+
+.search_container {
+    position: relative;
+    top: 177px;
+}
+
+.watch_list_btn {
+    border-radius: 1%;
+    background-color: #2292D9;
+    color: white;
+    width: 120px;
+    height: 60px;
+    margin: 20px;
+    position: absolute;
+    right: -18px;
+    top: -19px;
+}
+
+.s_btn {
+    border-radius: 1%;
+    background-color: #2292D9;
+    color: white;
+    width: 120px;
+    height: 60px;
+    margin: 20px;
+    position: absolute;
+    right: 180px;
+    top: -19px;
+}
+
+.btn {
+    background-color: #2292D9;
+    width: 93px;
+    height: 36px;
+    margin: 4px;
+    color: white;
+    text-align: center;
+    border-radius: 1px;
+}
+
+.symbol {
+    display: table-cell;
+    width: 50px;
+    text-align: left;
+}
+
+.name {
+    display: table-cell;
+    width: 350px;
+    text-align: left;
+}
+
+.equity {
+    display: table-cell;
+    width: 100px;
+    text-align: left;
+}
+
+.company_symbol_text {
+    position: absolute;
+    top: -22px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.logout_container {
+    position: absolute;
+    top: 92px;
+    right: 513px;
+}
+
+.text_container {
+    position: absolute;
+    top: 88px;
+    left: -1px;
+    font-size: xx-large;
+}

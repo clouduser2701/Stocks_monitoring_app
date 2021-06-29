@@ -1,0 +1,30 @@
+﻿@page "/{UserName?}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+    <div>
+        <div>
+            <SearchWindow></SearchWindow>
+        </div>
+        <div class="desc">
+            <p>CHOOSE COMPANY</p>
+        </div>
+    </div>
+
+    <style>
+        .desc {
+            margin-top: 100px;
+            font-weight: bold;
+            color: #2292D9;
+            position: relative;
+            text-align: center;
+            top: 600px;
+            font-size: 50px;
+        }
+    </style>
+
+    @code{
+        [Parameter] public string UserName { get; set; }
+    }
+
+

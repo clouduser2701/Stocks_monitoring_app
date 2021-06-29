@@ -1,0 +1,171 @@
+﻿@page "/watch-list"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IJSRuntime js
+@inject NavigationManager navigation
+@inject IApiHttpService httpService
+
+
+@if (Tickers == null)
+{
+    <p>loading...</p>
+}
+else
+{
+    <div class="main_container">
+        <p class="desc">WatchList</p>
+
+        <SfGrid DataSource="@Tickers" AllowPaging="true" AllowSorting="true" AllowFiltering="true" Height="600" Width="100%">
+            <GridPageSettings PageSize="4" />
+            <GridEvents OnRecordClick="RecordClickHandler" TValue="TickerResponseDto"></GridEvents>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn HeaderText="LOGO" TextAlign="TextAlign.Center">
+                    <Template>
+                        @{
+                            var ticker = (context as TickerResponseDto);
+                            <div class="image" height="100px" width="150px" @onclick="@(() => GoToTicker(ticker.Symbol))">
+                                <img src="@ticker.LogoLink" alt="logo" height="100px" width="120px" />
+                            </div>
+                        }
+                    </Template>
+                </GridColumn>
+
+                <GridColumn Field="@nameof(TickerResponseDto.Symbol)" HeaderText="SYMBOL" TextAlign="TextAlign.Center">
+
+                </GridColumn>
+
+                <GridColumn Field="@nameof(TickerResponseDto.Name)" HeaderText="NAME" TextAlign="TextAlign.Center">
+
+                </GridColumn>
+
+                <GridColumn HeaderText="SECTOR" TextAlign="TextAlign.Center">
+                    <Template>
+                        @{
+                            var ticker = (context as TickerResponseDto);
+                            <p>@(ticker.Tags.Split(",")[0])</p>
+                        }
+                    </Template>
+                </GridColumn>
+
+                <GridColumn Field="@nameof(TickerResponseDto.Country)" HeaderText="COUNTRY" TextAlign="TextAlign.Center">
+
+                </GridColumn>
+
+                <GridColumn Field="@nameof(TickerResponseDto.CEO)" HeaderText="CEO" TextAlign="TextAlign.Center">
+
+                </GridColumn>
+
+                <GridColumn HeaderText="OPTIONS" TextAlign="TextAlign.Center">
+                    <Template>
+                        @{
+                            string tickerSymbol = (context as TickerResponseDto).Symbol;
+                            <button class="delete_button" @onclick="@(() => DeleteRecordFromList(tickerSymbol))">DELETE</button>
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+        <SfButton CssClass="back_button" Content="BACK" OnClick="GoBack"></SfButton>
+    </div>
+}
+
+<style>
+
+    .back_button {
+        border-radius: 1%;
+        background-color: #2292D9;
+        color: white;
+        font-weight: bold;
+        width: 120px;
+        height: 40px;
+        margin: 20px;
+    }
+
+    .delete_button {
+        border-radius: 1%;
+        color: white;
+        background-color: red;
+        width: 100px;
+        height: 40px;
+        border: none;
+    }
+
+    .main_container {
+        height: 600px;
+        width: 90%;
+        margin: 0 auto;
+    }
+
+    .desc {
+        margin: 30px;
+        font-size: 50px;
+        color: #2292D9;
+        font-weight: bolder;
+    }
+
+    .e-grid .e-headercell, .e-grid .e-detailheadercell {
+        color: white;
+        background-color: #2292D9;
+        border-color: #dee2e6;
+    }
+
+    .e-grid .e-rowcell, .e-grid .e-groupcaption, .e-grid .e-indentcell, .e-grid .e-recordplusexpand, .e-grid .e-recordpluscollapse, .e-grid .e-detailrowcollapse, .e-grid .e-detailrowexpand, .e-grid .e-detailindentcell, .e-grid .e-detailcell {
+        border-color: #dee2e6;
+        font-size: 19px;
+        font-weight: 600;
+    }
+</style>
+
+
+
+
+@code {
+    public List<TickerResponseDto> Tickers { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Tickers = await httpService.GetTickersOfUser();
+        }
+        catch
+        {
+
+        }
+
+
+    }
+
+    public async Task DeleteRecordFromList(string tickerSymbol)
+    {
+        try
+        {
+            Tickers.RemoveAll(t => t.Symbol == tickerSymbol);
+            Tickers = new(Tickers);
+            await httpService.DeleteTickerFromUser(tickerSymbol);
+        }
+        catch
+        {
+
+        }
+    }
+
+    public void GoToTicker(string tickerSymbol)
+    {
+        navigation.NavigateTo($"ticker/{tickerSymbol}");
+    }
+
+    public void RecordClickHandler(RecordClickEventArgs<TickerResponseDto> args)
+    {
+        if (args.Column.Index != 6)
+        {
+            GoToTicker(args.RowData.Symbol);
+        }
+    }
+
+    public async Task GoBack()
+    {
+        await js.InvokeVoidAsync("history.back");
+    }
+}

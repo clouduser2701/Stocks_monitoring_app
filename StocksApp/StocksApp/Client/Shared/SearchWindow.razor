@@ -1,0 +1,147 @@
+﻿@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject NavigationManager Navigation
+@inject SignOutSessionStateManager SignOutManager
+@inject HttpClient httpClient
+@inject IApiHttpService httpService
+@inject IJSRuntime js
+
+@if (Tickers == null)
+{
+    <p>loading...</p>
+}
+else
+{
+    <div class="main_container">
+        <div class="text_container"><p>Dashboard</p></div>
+        <div class="logout_container"><button class="btn" @onclick="BeginSignOut">LOGOUT</button></div>
+        <div class="search_container">
+            <div class="company_symbol_text"><p>Company symbol</p></div>
+            <form class="form_field">
+                <SfAutoComplete TValue="string" TItem="TickerResponseDto" Placeholder="ticker symbol..."
+                                DataSource="@Tickers" @bind-Value="@TickerSymbol">
+                    <AutoCompleteFieldSettings Value="Symbol" />
+
+                    <AutoCompleteTemplates TItem="TickerResponseDto" Context="TickerResponseDto">
+
+                        <ItemTemplate>
+                            <span @onmouseover="@(() => AssignValue(TickerResponseDto))" @onclick="@(() => GoToTicker())">
+                                <span class='symbol'>@((TickerResponseDto).Symbol)</span>
+                                <span class='name'>@((TickerResponseDto).Name)</span>
+                                <span class='equity'>Equity - @((TickerResponseDto).ExchangeSymbol)</span>
+                            </span>
+                        </ItemTemplate>
+                    </AutoCompleteTemplates>
+                    <AutoCompleteFieldSettings Value="Symbol" />
+                </SfAutoComplete>
+            </form>
+            <SfButton CssClass="s_btn" Content="SEARCH" @onclick="GoToTicker"></SfButton>
+            <SfButton CssClass="watch_list_btn" Content="WATCHLIST" @onclick="GoToWathcList"></SfButton>
+        </div>
+    </div>
+}
+
+
+
+@code {
+
+    [Parameter] public string TickerSymbol { get; set; }
+    List<TickerResponseDto> Tickers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Tickers = await httpService.GetAllTickers();
+        }
+        catch
+        {
+            Tickers = null;
+        }
+    }
+
+    private async Task BeginSignOut(MouseEventArgs args)
+    {
+        await SignOutManager.SetSignOutState();
+        Navigation.NavigateTo("authentication/logout");
+    }
+
+    private async Task GoToTicker()
+    {
+        if (TickerSymbol != null && Tickers.Where(t => t.Symbol == TickerSymbol).Any())
+        {
+            Navigation.NavigateTo($"ticker/{TickerSymbol}", forceLoad: true);
+            
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "selected ticker doesn't exist");
+        }
+    }
+
+    private void GoToWathcList()
+    {
+        Navigation.NavigateTo($"watch-list");
+    }
+
+
+    public async Task KeyPressed(KeyboardEventArgs args, TickerResponseDto ticker)
+    {
+        Console.WriteLine(args.Key);
+        if (args.Key == "Enter")
+        {
+            AssignValue(ticker);
+            await GoToTicker();
+        }
+    }
+
+    public void AssignValue(TickerResponseDto ticker)
+    {
+        TickerSymbol = ticker.Symbol;
+    }
+
+}
+
+<style>
+    .e-ddl.e-input-group input.e-input::placeholder {
+        color: #2292D9;
+    }
+
+    .e-dropdownbase .e-list-item.e-item-focus, .e-dropdownbase .e-list-item.e-active, .e-dropdownbase .e-list-item.e-active.e-hover, .e-dropdownbase .e-list-item.e-hover {
+        background-color: #2292D9;
+        color: black;
+        border: 1px solid black;
+    }
+
+    .e-ddl.e-input-group.e-control-wrapper .e-input {
+        font-size: 20px;
+        color: #2292D9;
+        background: white;
+        height: 60px;
+        border: 1px solid #2292D9;
+        border-radius: 1px;
+    }
+
+    .watch_list_btn {
+        border-radius: 1%;
+        background-color: #2292D9;
+        color: white;
+        width: 120px;
+        height: 60px;
+        margin: 20px;
+        position: absolute;
+        right: -18px;
+        top: -19px;
+    }
+
+    .s_btn {
+        border-radius: 1%;
+        background-color: #2292D9;
+        color: white;
+        width: 120px;
+        height: 60px;
+        margin: 20px;
+        position: absolute;
+        right: 180px;
+        top: -19px;
+    }
+</style>
